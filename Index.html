@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <title>Hernandez_Flores_Juan_Pablo</title>
+        <script>
+        </script>
+    </head>
+    
+    <body>
+        <script type="module">
+            import * as THREE from './JS/three.module.js';
+            import { OrbitControls } from './JS/OrbitControls.js';
+            import { GLTFLoader } from './JS/GLTFLoader.js';
+
+        //Crear Escena y Definir Fondo
+        var Escena = new THREE.Scene(); //Crear Escena
+        var CTexturaFondo = new THREE.TextureLoader(); //Creamos Cargador
+        CTexturaFondo.crossOrigin = "Anonymous";
+        CTexturaFondo.load('./Recursos/ViaLactea.jpg', function (TexturaFondo) { //Cargamos Textura
+            Escena.background = TexturaFondo; //Definimos Textura
+        });
+
+        //Crear camara
+        var Camara = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight);
+        Camara.position.x=0;
+        Camara.position.y=25;
+        Camara.position.z=0;
+        
+        //Crear Render
+        var Render = new THREE.WebGLRenderer();
+            Render.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(Render.domElement);
+            Render.setPixelRatio(window.devicePixelRatio);
+            Render.shadowMap.enabled = true //Permite Sombras
+
+        //Controles Camara
+        var controles = new OrbitControls(Camara, Render.domElement);
+            controles.minDistance = 5;
+            controles.maxDistance = 300;
+
+        //Crear Luz
+        const luzSolar = new THREE.PointLight(0xFFFFFF,3,50);
+        Escena.add(luzSolar);
+
+        const luzExtra = new THREE.PointLight(0xFFFFFF,10,2);//Luz para iluminar al Atronauta
+        Escena.add(luzExtra);
+        luzExtra.position.y=23;
+
+        //Astronauta
+        let loadedModel;
+        const glftLoader = new GLTFLoader();
+        glftLoader.load('./Recursos/floating_astro_sva_no_plinth/scene.gltf', (gltfScene) => {
+            /*while(gltfScene.scene.children.length){ //Muestra todas las funciones del Objeto
+                console.log(gltfScene.scene.children[0]);
+                Escena.add(gltfScene.scene.children[0]);
+            }*/
+        loadedModel = gltfScene;
+
+        gltfScene.scene.rotation.x = Math.PI*1.6;
+        gltfScene.scene.position.y = 21;
+        gltfScene.scene.position.z = 3;
+        gltfScene.scene.scale.set(1, 1, 1);
+        Escena.add(gltfScene.scene);
+        //gltfScene.scene.animations(1); //No funciona (?)
+        });
+
+        //Codigo del Sol
+        //var sol = new THREE.Mesh( new THREE.SphereGeometry(10),
+        var sol = new THREE.Mesh( new THREE.TorusKnotGeometry(10,2.7027,300,3,6,12), 
+            new THREE.MeshBasicMaterial(
+                {map : new THREE.TextureLoader().load('./Recursos/Sol.jpg')}));
+        sol.position.x = 0;
+        
+        //Codigo de Aux
+        var aux = new THREE.Mesh(new THREE.SphereGeometry(.00001), 
+            new THREE.MeshStandardMaterial(
+                {map : new THREE.TextureLoader().load('./Recursos/Mercurio.jpg')}));
+        aux.position.x= 40;
+        aux.position.y= 0;
+
+        //Codigo de la Tierra
+        var tierra =new THREE.Mesh(new THREE.TorusGeometry(1,.5,30,360),
+        //var tierra =new THREE.Mesh(new THREE.SphereGeometry(1), 
+            new THREE.MeshStandardMaterial(
+                {map : new THREE.TextureLoader().load('./Recursos/Tierra.jpg')}));
+
+        tierra.position.x = aux.position.x;
+        tierra.position.y = aux.position.y;
+        //tierra.rotation.z= Math.PI*2;
+        
+        //Codigo de la Luna
+        var luna = new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,1,64,64,true,0,Math.PI*2), 
+        //var luna =new THREE.Mesh(new THREE.SphereGeometry(.5),
+            new THREE.MeshStandardMaterial(
+                {map : new THREE.TextureLoader().load('./Recursos/Luna.jpg')}));
+
+        luna.position.x = 0;
+        luna.position.y = 0;
+
+        //Añadimos los Objetos
+        Escena.add(sol);
+        Escena.add(aux);
+        Escena.add(tierra);
+        Escena.add(luna);
+     
+
+        //Velocidades de Traslacion 
+        var VelocidadAux=0;
+        var VelocidadTierra=0;
+        var VelocidadLuna=0;
+       
+        function Animacion(){//Animacion
+           
+            //Animacion y Velocidades de Rotaciones
+            sol.rotation.y +=0.001;
+            tierra.rotateX(0.01);
+            tierra.rotateY(0.01);
+            tierra.rotateZ(0.01);
+            luna.rotateX(0.1);
+
+            //Animacion y Velocidades de Traslaciones
+            VelocidadAux+=0.01;
+            aux.position.x=Math.cos(VelocidadAux)*50;
+            aux.position.y=Math.sin(VelocidadAux)*15;
+
+            VelocidadTierra+=0.1;
+            tierra.position.x= aux.position.x+Math.cos(VelocidadTierra)*4;
+            tierra.position.z= aux.position.z+Math.sin(VelocidadTierra)*4;
+            tierra.position.y= aux.position.y;
+
+            VelocidadLuna+=0.05;
+            luna.position.x= tierra.position.x+Math.cos(VelocidadLuna)*2.5;
+            luna.position.y= tierra.position.y+Math.sin(VelocidadLuna)*2.5;
+            luna.position.z= tierra.position.z;
+
+            
+            requestAnimationFrame(Animacion);//Creamos el Frame
+            Render.render(Escena,Camara);//Se crea Render
+        }
+        Animacion()
+        </script>
+    </body>
+</html>
